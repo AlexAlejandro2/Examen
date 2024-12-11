@@ -1,0 +1,44 @@
+import cv2
+import numpy as np
+import tensorflow as tf
+
+# Cargamos el modelo creado
+model = tf.keras.models.load_model('carreteras.h5')
+IMG_SIZE = (64, 64)
+
+# Iniciamos la captura para abrir la camara
+cap = cv2.VideoCapture(0)
+
+# Este if es solo para saber si ocurre un error en la cámara y no se ejecuta
+if not cap.isOpened():
+    print("Error: No se puede acceder a la cámara.")
+    exit()
+
+while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: No se pudo capturar la imagen.")
+        break
+
+    # Redimensionar la imagen
+    img = cv2.resize(frame, IMG_SIZE)
+    img = img / 255.0
+    img = np.expand_dims(img, axis=0)
+
+    # Realiza la prediccion 
+    prediction = model.predict(img)
+    class_idx = np.argmax(prediction)
+
+    # Definimos los nombres que se mostraran al predecir
+    class_names = ['Carretera Limpia', 'Carretera Nieve', 'Carretera con Baches']
+    label = class_names[class_idx]
+    cv2.putText(frame, label, (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)  
+
+    # Muestra la imagen de la camara
+    cv2.imshow('Prediccion en tiempo real', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cap.release()
+cv2.destroyAllWindows()
